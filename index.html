@@ -7,7 +7,7 @@
 <style>
   body { font-family: sans-serif; }
   aside button:hover { background-color: #1e40af; }
-
+ 
   /* Calendário */
   #calendarioGrid div {
     display: flex;
@@ -42,7 +42,7 @@
     font-size: 0.8rem;
   }
   .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
-
+ 
   /* Fórum */
   #listaForum::-webkit-scrollbar { width: 6px; }
   #listaForum::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.3); border-radius: 3px; }
@@ -50,7 +50,7 @@
 </style>
 </head>
 <body class="flex h-screen bg-gray-100">
-
+ 
 <!-- Menu Lateral -->
 <aside class="w-64 bg-blue-800 text-white p-4 flex flex-col">
   <h2 class="text-2xl font-bold mb-6">Menu</h2>
@@ -61,10 +61,10 @@
   <button onclick="mostrarTela('jogos')" class="text-left py-2 px-4 rounded">Jogos</button>
   <button onclick="logout()" class="mt-auto bg-red-600 py-2 px-4 rounded">Sair</button>
 </aside>
-
+ 
 <!-- Conteúdo Principal -->
 <main class="flex-1 p-6 overflow-y-auto flex flex-col h-full">
-
+ 
   <!-- Avisos -->
   <section id="avisos" class="hidden flex flex-col">
     <h1 class="text-2xl font-bold mb-4">Mural de Avisos</h1>
@@ -74,7 +74,7 @@
     </form>
     <ul id="listaAvisos" class="space-y-2 flex-1 overflow-y-auto"></ul>
   </section>
-
+ 
   <!-- Fórum -->
   <section id="forum" class="hidden flex flex-col h-full">
     <h1 class="text-2xl font-bold mb-4">Fórum</h1>
@@ -84,7 +84,7 @@
       <button type="submit" class="bg-green-600 text-white px-4 py-3 rounded-r hover:bg-green-700">Enviar</button>
     </form>
   </section>
-
+ 
   <!-- Calendário -->
   <section id="calendario" class="hidden flex flex-col">
     <h1 class="text-2xl font-bold mb-4 text-center">Calendário</h1>
@@ -105,7 +105,7 @@
     </form>
     <ul id="listaEventos" class="space-y-2 flex-1 overflow-y-auto"></ul>
   </section>
-
+ 
   <!-- Chapas -->
   <section id="chapas" class="hidden flex flex-col">
     <h1 class="text-2xl font-bold mb-4">Chapas e Propostas</h1>
@@ -118,7 +118,7 @@
     </form>
     <ul id="listaChapas" class="space-y-4 flex-1 overflow-y-auto"></ul>
   </section>
-
+ 
   <!-- Jogos -->
   <section id="jogos" class="hidden flex flex-col">
     <h1 class="text-2xl font-bold mb-4">Jogos</h1>
@@ -130,14 +130,14 @@
       <p class="text-gray-500">Escolha um jogo acima para jogar.</p>
     </div>
   </section>
-
+ 
 </main>
-
+ 
 <script>
   // ---------- Inicialização ----------
   let role = localStorage.getItem("role");
   if(!role) window.location.href="login.html";
-
+ 
   function mostrarTela(tela){
     document.querySelectorAll("main section").forEach(sec=>sec.classList.add("hidden"));
     document.getElementById(tela).classList.remove("hidden");
@@ -147,12 +147,12 @@
     if(tela==="chapas") renderChapas();
   }
   function logout(){ localStorage.removeItem("role"); window.location.href="login.html"; }
-
+ 
   // ---------- Jogos ----------
   function abrirJogo(url){
     document.getElementById("gameContainer").innerHTML = `<iframe src="${url}" class="w-full h-full border-0"></iframe>`;
   }
-
+ 
   // ---------- Mural de Avisos ----------
   function loadAvisos(){ return JSON.parse(localStorage.getItem("avisos")||"[]"); }
   function saveAvisos(a){ localStorage.setItem("avisos",JSON.stringify(a)); }
@@ -181,7 +181,7 @@
     avisos.push({texto}); saveAvisos(avisos); document.getElementById("textoAviso").value="";
     renderAvisos();
   });
-
+ 
   // ---------- Fórum ----------
   function loadForum(){ return JSON.parse(localStorage.getItem("forum")||"[]"); }
   function saveForum(f){ localStorage.setItem("forum",JSON.stringify(f)); }
@@ -209,7 +209,7 @@
     forum.push({texto}); saveForum(forum); document.getElementById("textoForum").value="";
     renderForum();
   });
-
+ 
   // ---------- Calendário ----------
   let hoje=new Date(); let mesAtual=hoje.getMonth(); let anoAtual=hoje.getFullYear();
   function loadEventos(){ return JSON.parse(localStorage.getItem("eventos")||"[]"); }
@@ -235,4 +235,49 @@
       grid.appendChild(div);
     }
     document.getElementById("formEvento").style.display=(role==="gestor")?"flex":"none";
-    eventos.forEach(ev=>{ const li=document.createElement("li"); li.className="p-2 bg-white rounded shadow flex justify-between items-center"; li
+    eventos.forEach(ev=>{ const li=document.createElement("li"); li.className="p-2 bg-white rounded shadow flex justify-between items-center"; li.textContent=`${ev.data}: ${ev.desc}`; if(role==="gestor"){ const btn=document.createElement("button"); btn.textContent="Excluir"; btn.className="bg-red-500 text-white px-2 py-1 rounded ml-2"; btn.onclick=()=>{ const evs=loadEventos().filter(e=>e!==ev); saveEventos(evs); renderCalendario(); }; li.appendChild(btn); } lista.appendChild(li); });
+  }
+  function mudarMes(sinal){ mesAtual+=sinal; if(mesAtual<0){ mesAtual=11; anoAtual--; } if(mesAtual>11){ mesAtual=0; anoAtual++; } renderCalendario(); }
+  document.getElementById("formEvento")?.addEventListener("submit",e=>{
+    e.preventDefault(); if(role!=="gestor") return;
+    const data=document.getElementById("dataEvento").value; const desc=document.getElementById("descEvento").value.trim();
+    if(!data||!desc) return;
+    const eventos=loadEventos(); eventos.push({data,desc}); saveEventos(eventos); document.getElementById("dataEvento").value=""; document.getElementById("descEvento").value=""; renderCalendario();
+  });
+ 
+  // ---------- Chapas ----------
+  function loadChapas(){ return JSON.parse(localStorage.getItem("chapas")||"[]"); }
+  function saveChapas(c){ localStorage.setItem("chapas",JSON.stringify(c)); }
+  function renderChapas(){
+    const lista=document.getElementById("listaChapas"); lista.innerHTML="";
+    const chapas=loadChapas();
+    chapas.forEach((c,i)=>{
+      const li=document.createElement("li");
+      li.className="p-2 bg-white rounded shadow flex flex-col";
+      const titulo=document.createElement("h3"); titulo.className="font-bold text-lg"; titulo.textContent=c.nome; li.appendChild(titulo);
+      const prop=document.createElement("p"); prop.textContent=c.proposta; li.appendChild(prop);
+      const integ=document.createElement("p"); integ.className="italic"; integ.textContent="Integrantes: "+c.integrantes; li.appendChild(integ);
+      if(c.imagem){ const img=document.createElement("img"); img.src=c.imagem; img.className="mt-2 max-h-40"; li.appendChild(img); }
+      if(role==="gestor"){ const btn=document.createElement("button"); btn.textContent="Excluir"; btn.className="bg-red-500 text-white px-2 py-1 rounded mt-2"; btn.onclick=()=>{ chapas.splice(i,1); saveChapas(chapas); renderChapas(); }; li.appendChild(btn); }
+      lista.appendChild(li);
+    });
+    document.getElementById("formChapa").style.display=(role==="gestor")?"flex":"none";
+  }
+  document.getElementById("formChapa")?.addEventListener("submit",e=>{
+    e.preventDefault(); if(role!=="gestor") return;
+    const nome=document.getElementById("nomeChapa").value.trim();
+    const proposta=document.getElementById("propostaChapa").value.trim();
+    const integrantes=document.getElementById("integrantesChapa").value.trim();
+    const img=document.getElementById("imagemChapa").files[0];
+    if(!nome||!proposta) return;
+    if(img){ const reader=new FileReader(); reader.onload=(ev)=>{ const chapas=loadChapas(); chapas.push({nome,proposta,integrantes,imagem:ev.target.result}); saveChapas(chapas); renderChapas(); }; reader.readAsDataURL(img); } else { const chapas=loadChapas(); chapas.push({nome,proposta,integrantes}); saveChapas(chapas); renderChapas(); }
+    document.getElementById("nomeChapa").value=""; document.getElementById("propostaChapa").value=""; document.getElementById("integrantesChapa").value=""; document.getElementById("imagemChapa").value="";
+  });
+ 
+  // ---------- Inicial ----------
+  mostrarTela("avisos");
+</script>
+ 
+</body>
+</html>
+ 

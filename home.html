@@ -1,284 +1,981 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
+
 <head>
-<meta charset="UTF-8">
-<title>Sistema Estudantil</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-  body { font-family: sans-serif; }
-  aside button:hover { background-color: #1e40af; }
- 
-  /* Calendário */
-  #calendarioGrid div {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 80px;
-    border-radius: 8px;
-    font-weight: bold;
-    transition: transform 0.2s, background-color 0.2s;
-    cursor: pointer;
-    position: relative;
-  }
-  #calendarioGrid div:hover { transform: scale(1.05); background-color: #dbeafe; }
-  #calendarioGrid div:nth-child(7n+1), #calendarioGrid div:nth-child(7n) { background-color: #f3f4f6; }
-  .hoje { border: 3px solid #1d4ed8; }
-  .evento { background-color: #bbf7d0; color: #065f46; }
-  .tooltiptext {
-    visibility: hidden;
-    width: max-content;
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 4px 8px;
-    position: absolute;
-    z-index: 10;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 0.8rem;
-  }
-  .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
- 
-  /* Fórum */
-  #listaForum::-webkit-scrollbar { width: 6px; }
-  #listaForum::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.3); border-radius: 3px; }
-  #listaForum::-webkit-scrollbar-track { background-color: transparent; }
-</style>
-</head>
-<body class="flex h-screen bg-gray-100">
- 
-<!-- Menu Lateral -->
-<aside class="w-64 bg-blue-800 text-white p-4 flex flex-col">
-  <h2 class="text-2xl font-bold mb-6">Menu</h2>
-  <button onclick="mostrarTela('avisos')" class="text-left py-2 px-4 rounded">Mural de Avisos</button>
-  <button onclick="mostrarTela('forum')" class="text-left py-2 px-4 rounded">Fórum</button>
-  <button onclick="mostrarTela('calendario')" class="text-left py-2 px-4 rounded">Calendário</button>
-  <button onclick="mostrarTela('chapas')" class="text-left py-2 px-4 rounded">Chapas</button>
-  <button onclick="mostrarTela('jogos')" class="text-left py-2 px-4 rounded">Jogos</button>
-  <button onclick="logout()" class="mt-auto bg-red-600 py-2 px-4 rounded">Sair</button>
-</aside>
- 
-<!-- Conteúdo Principal -->
-<main class="flex-1 p-6 overflow-y-auto flex flex-col h-full">
- 
-  <!-- Avisos -->
-  <section id="avisos" class="hidden flex flex-col">
-    <h1 class="text-2xl font-bold mb-4">Mural de Avisos</h1>
-    <form id="formAviso" class="mb-4 hidden flex">
-      <input type="text" id="textoAviso" placeholder="Digite um aviso" class="border p-2 rounded w-2/3">
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Adicionar</button>
-    </form>
-    <ul id="listaAvisos" class="space-y-2 flex-1 overflow-y-auto"></ul>
-  </section>
- 
-  <!-- Fórum -->
-  <section id="forum" class="hidden flex flex-col h-full">
-    <h1 class="text-2xl font-bold mb-4">Fórum</h1>
-    <div id="listaForum" class="flex-1 overflow-y-auto mb-4 space-y-2 px-2"></div>
-    <form id="formForum" class="flex border-t p-2 bg-white items-center">
-      <input type="text" id="textoForum" placeholder="Digite sua mensagem..." class="flex-1 border p-3 rounded-l focus:outline-none focus:ring-2 focus:ring-blue-500">
-      <button type="submit" class="bg-green-600 text-white px-4 py-3 rounded-r hover:bg-green-700">Enviar</button>
-    </form>
-  </section>
- 
-  <!-- Calendário -->
-  <section id="calendario" class="hidden flex flex-col">
-    <h1 class="text-2xl font-bold mb-4 text-center">Calendário</h1>
-    <div class="flex items-center justify-center space-x-4 mb-4">
-      <button onclick="mudarMes(-1)" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">◀</button>
-      <span id="mesAtual" class="text-xl font-bold"></span>
-      <button onclick="mudarMes(1)" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">▶</button>
-    </div>
-    <div class="grid grid-cols-7 gap-1 text-center font-semibold mb-1">
-      <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div>
-      <div>Qui</div><div>Sex</div><div>Sáb</div>
-    </div>
-    <div id="calendarioGrid" class="grid grid-cols-7 gap-1 mb-6"></div>
-    <form id="formEvento" class="mb-4 hidden flex flex-wrap gap-2 items-center">
-      <input type="date" id="dataEvento" class="border p-2 rounded">
-      <input type="text" id="descEvento" placeholder="Descrição" class="border p-2 rounded flex-1">
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Adicionar Evento</button>
-    </form>
-    <ul id="listaEventos" class="space-y-2 flex-1 overflow-y-auto"></ul>
-  </section>
- 
-  <!-- Chapas -->
-  <section id="chapas" class="hidden flex flex-col">
-    <h1 class="text-2xl font-bold mb-4">Chapas e Propostas</h1>
-    <form id="formChapa" class="mb-4 hidden flex flex-col gap-2">
-      <input type="text" id="nomeChapa" placeholder="Nome da chapa" class="border p-2 rounded w-1/3">
-      <textarea id="propostaChapa" placeholder="Proposta da chapa" class="border p-2 rounded w-full h-24 resize-none"></textarea>
-      <input type="text" id="integrantesChapa" placeholder="Nomes dos integrantes (separados por vírgula)" class="border p-2 rounded w-full">
-      <input type="file" id="imagemChapa" accept="image/*">
-      <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded">Adicionar Chapa</button>
-    </form>
-    <ul id="listaChapas" class="space-y-4 flex-1 overflow-y-auto"></ul>
-  </section>
- 
-  <!-- Jogos -->
-  <section id="jogos" class="hidden flex flex-col">
-    <h1 class="text-2xl font-bold mb-4">Jogos</h1>
-    <div id="gameMenu" class="flex flex-col mb-4">
-      <button onclick="abrirJogo('jogo/jogo-da-memoria.html')" class="bg-blue-600 text-white py-2 px-4 rounded mb-2 hover:bg-blue-700">Jogo da Memória</button>
-      <button onclick="abrirJogo('jogo/jogo-do-simon.html')" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">Jogo do Simon</button>
-    </div>
-    <div id="gameContainer" class="flex justify-center items-center w-full h-96 border rounded bg-white">
-      <p class="text-gray-500">Escolha um jogo acima para jogar.</p>
-    </div>
-  </section>
- 
-</main>
- 
-<script>
-  // ---------- Inicialização ----------
-  let role = localStorage.getItem("role");
-  if(!role) window.location.href="login.html";
- 
-  function mostrarTela(tela){
-    document.querySelectorAll("main section").forEach(sec=>sec.classList.add("hidden"));
-    document.getElementById(tela).classList.remove("hidden");
-    if(tela==="avisos") renderAvisos();
-    if(tela==="forum") renderForum();
-    if(tela==="calendario") renderCalendario();
-    if(tela==="chapas") renderChapas();
-  }
-  function logout(){ localStorage.removeItem("role"); window.location.href="home.html"; }
- 
-  // ---------- Jogos ----------
-  function abrirJogo(url){
-    document.getElementById("gameContainer").innerHTML = `<iframe src="${url}" class="w-full h-full border-0"></iframe>`;
-  }
- 
-  // ---------- Mural de Avisos ----------
-  function loadAvisos(){ return JSON.parse(localStorage.getItem("avisos")||"[]"); }
-  function saveAvisos(a){ localStorage.setItem("avisos",JSON.stringify(a)); }
-  function renderAvisos(){
-    const lista=document.getElementById("listaAvisos"); lista.innerHTML="";
-    const avisos=loadAvisos();
-    avisos.forEach((a,i)=>{
-      const li=document.createElement("li");
-      li.className="p-2 bg-white rounded flex justify-between items-center shadow";
-      li.textContent=a.texto;
-      if(role==="gestor"){
-        const btn=document.createElement("button");
-        btn.textContent="Excluir"; btn.className="bg-red-500 text-white px-2 py-1 rounded ml-2";
-        btn.onclick=()=>{ avisos.splice(i,1); saveAvisos(avisos); renderAvisos(); };
-        li.appendChild(btn);
-      }
-      lista.appendChild(li);
-    });
-    document.getElementById("formAviso").style.display=(role==="gestor")?"flex":"none";
-  }
-  document.getElementById("formAviso")?.addEventListener("submit",e=>{
-    e.preventDefault();
-    const texto=document.getElementById("textoAviso").value.trim();
-    if(!texto) return;
-    const avisos=loadAvisos();
-    avisos.push({texto}); saveAvisos(avisos); document.getElementById("textoAviso").value="";
-    renderAvisos();
-  });
- 
-  // ---------- Fórum ----------
-  function loadForum(){ return JSON.parse(localStorage.getItem("forum")||"[]"); }
-  function saveForum(f){ localStorage.setItem("forum",JSON.stringify(f)); }
-  function renderForum(){
-    const lista=document.getElementById("listaForum"); lista.innerHTML="";
-    const mensagens=loadForum();
-    mensagens.forEach((m,i)=>{
-      const div=document.createElement("div");
-      div.className="p-2 bg-white rounded shadow flex justify-between";
-      div.textContent=m.texto;
-      if(role==="gestor"){
-        const btn=document.createElement("button");
-        btn.textContent="Excluir"; btn.className="bg-red-500 text-white px-2 py-1 rounded ml-2";
-        btn.onclick=()=>{ mensagens.splice(i,1); saveForum(mensagens); renderForum(); };
-        div.appendChild(btn);
-      }
-      lista.appendChild(div);
-    });
-  }
-  document.getElementById("formForum")?.addEventListener("submit",e=>{
-    e.preventDefault();
-    const texto=document.getElementById("textoForum").value.trim();
-    if(!texto) return;
-    const forum=loadForum();
-    forum.push({texto}); saveForum(forum); document.getElementById("textoForum").value="";
-    renderForum();
-  });
- 
-  // ---------- Calendário ----------
-  let hoje=new Date(); let mesAtual=hoje.getMonth(); let anoAtual=hoje.getFullYear();
-  function loadEventos(){ return JSON.parse(localStorage.getItem("eventos")||"[]"); }
-  function saveEventos(e){ localStorage.setItem("eventos",JSON.stringify(e)); }
-  function renderCalendario(){
-    const lista=document.getElementById("listaEventos"); lista.innerHTML="";
-    const eventos=loadEventos();
-    const grid=document.getElementById("calendarioGrid"); grid.innerHTML="";
-    const primeiro=new Date(anoAtual,mesAtual,1); const ultimo=new Date(anoAtual,mesAtual+1,0);
-    document.getElementById("mesAtual").textContent=primeiro.toLocaleString('pt-BR',{month:'long',year:'numeric'});
-    const diasAntes=primeiro.getDay();
-    for(let i=0;i<diasAntes;i++){ const div=document.createElement("div"); grid.appendChild(div); }
-    for(let d=1;d<=ultimo.getDate();d++){
-      const div=document.createElement("div");
-      div.textContent=d;
-      const dataStr=`${anoAtual}-${String(mesAtual+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const eventosDoDia=eventos.filter(ev=>ev.data===dataStr);
-      if(d===hoje.getDate() && mesAtual===hoje.getMonth() && anoAtual===hoje.getFullYear()) div.classList.add("hoje");
-      if(eventosDoDia.length){
-        div.classList.add("evento","tooltip");
-        const span=document.createElement("span"); span.className="tooltiptext"; span.textContent=eventosDoDia.map(ev=>ev.desc).join(", "); div.appendChild(span);
-      }
-      grid.appendChild(div);
+
+  <meta charset="utf-8" />
+
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>Entre Alunos - Portal Estudantil</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+
+    :root{
+
+      --sidebar:#2c54a3;
+
+      --accent:#080808;
+
+      --panel:#ffffff;
+
+      --muted:#000000;
+
     }
-    document.getElementById("formEvento").style.display=(role==="gestor")?"flex":"none";
-    eventos.forEach(ev=>{ const li=document.createElement("li"); li.className="p-2 bg-white rounded shadow flex justify-between items-center"; li.textContent=`${ev.data}: ${ev.desc}`; if(role==="gestor"){ const btn=document.createElement("button"); btn.textContent="Excluir"; btn.className="bg-red-500 text-white px-2 py-1 rounded ml-2"; btn.onclick=()=>{ const evs=loadEventos().filter(e=>e!==ev); saveEventos(evs); renderCalendario(); }; li.appendChild(btn); } lista.appendChild(li); });
-  }
-  function mudarMes(sinal){ mesAtual+=sinal; if(mesAtual<0){ mesAtual=11; anoAtual--; } if(mesAtual>11){ mesAtual=0; anoAtual++; } renderCalendario(); }
-  document.getElementById("formEvento")?.addEventListener("submit",e=>{
-    e.preventDefault(); if(role!=="gestor") return;
-    const data=document.getElementById("dataEvento").value; const desc=document.getElementById("descEvento").value.trim();
-    if(!data||!desc) return;
-    const eventos=loadEventos(); eventos.push({data,desc}); saveEventos(eventos); document.getElementById("dataEvento").value=""; document.getElementById("descEvento").value=""; renderCalendario();
-  });
- 
-  // ---------- Chapas ----------
-  function loadChapas(){ return JSON.parse(localStorage.getItem("chapas")||"[]"); }
-  function saveChapas(c){ localStorage.setItem("chapas",JSON.stringify(c)); }
-  function renderChapas(){
-    const lista=document.getElementById("listaChapas"); lista.innerHTML="";
-    const chapas=loadChapas();
-    chapas.forEach((c,i)=>{
-      const li=document.createElement("li");
-      li.className="p-2 bg-white rounded shadow flex flex-col";
-      const titulo=document.createElement("h3"); titulo.className="font-bold text-lg"; titulo.textContent=c.nome; li.appendChild(titulo);
-      const prop=document.createElement("p"); prop.textContent=c.proposta; li.appendChild(prop);
-      const integ=document.createElement("p"); integ.className="italic"; integ.textContent="Integrantes: "+c.integrantes; li.appendChild(integ);
-      if(c.imagem){ const img=document.createElement("img"); img.src=c.imagem; img.className="mt-2 max-h-40"; li.appendChild(img); }
-      if(role==="gestor"){ const btn=document.createElement("button"); btn.textContent="Excluir"; btn.className="bg-red-500 text-white px-2 py-1 rounded mt-2"; btn.onclick=()=>{ chapas.splice(i,1); saveChapas(chapas); renderChapas(); }; li.appendChild(btn); }
-      lista.appendChild(li);
+
+
+
+    body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#25478a 0%, #17305e 100%);}
+
+
+
+    header{height:64px}
+
+    aside{width:260px;min-width:260px;background:var(--sidebar);}
+
+
+
+    /* calendario boxes */
+
+    #calendarioGrid > div{
+
+      min-height:86px;
+
+      padding:12px;
+
+      border-radius:12px;
+
+      display:flex;
+
+      flex-direction:column;
+
+      gap:6px;
+
+      transition:transform .12s ease, box-shadow .12s ease, background-color .12s ease;
+
+      cursor:pointer;
+
+      position:relative;
+
+    }
+
+    #calendarioGrid > div:hover{ transform: translateY(-6px); box-shadow: 0 12px 30px rgb(14, 35, 128); }
+
+    .dia-num{ font-weight:700; color:#1d2c4e; }
+
+    .dia-evento-badge{ background:#bbf7d0; color:#065f46; padding:4px 8px; border-radius:999px; font-size:12px; display:inline-block }
+
+    .hoje{ border:3px solid #0ea5e9; }
+
+
+
+    /* tooltip */
+
+    .tooltiptext{ visibility:hidden; position:absolute; top:10px; right:10px; background:rgba(10, 33, 132, 0.95); color:#000000; padding:8px; border-radius:8px; font-size:12px; z-index:40; box-shadow:0 8px 24px rgba(2,6,23,0.3); max-width:240px; text-align:left;}
+
+    .tooltip:hover .tooltiptext{ visibility:visible; }
+
+
+
+    /* scrollbar forum */
+
+    #listaForum::-webkit-scrollbar{ width:8px }
+
+    #listaForum::-webkit-scrollbar-thumb{ background:rgb(21, 45, 152); border-radius:6px }
+
+
+
+    /* responsive: hide sidebar under 920 */
+
+    @media (max-width:920px){ aside{display:none;} main{padding:16px;} }
+
+  </style>
+
+</head>
+
+<body class="min-h-screen text-slate-100">
+
+
+
+  <!-- HEADER -->
+
+  <header class="sticky top-0 z-40 bg-[rgba(255,255,255,0.04)] backdrop-blur border-b border-white/5">
+
+    <div class="max-w-[1400px] mx-auto px-6 flex items-center h-16 gap-4">
+
+      <div class="flex items-center gap-4">
+
+        <div class="w-10 h-10 bg-white rounded-md flex items-center justify-center text-slate-900 font-bold shadow">EA</div>
+
+        <div class="text-white text-lg font-semibold">Entre Alunos</div>
+
+      </div>
+
+      <!-- preservei o layout original e apenas acrescentei o botão de perfil à direita -->
+
+      <div class="ml-auto flex items-center gap-4">
+
+        <div class="text-sm text-slate-300">Bem-vindo(a)</div>
+
+        <div id="perfilWrapper" class="relative">
+
+          <button id="perfilToggle" class="flex items-center gap-2 bg-white/6 hover:bg-white/10 text-white px-3 py-1 rounded">
+
+            <img id="perfilFoto" src="https://via.placeholder.com/32" alt="Perfil" class="w-8 h-8 rounded-full object-cover border-2 border-white/50"/>
+
+            <span id="perfilNomeHeader" class="text-sm">Usuário</span>
+
+          </button>
+
+          <div id="perfilDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded shadow-lg text-slate-800 p-3 z-50">
+
+            <p><strong>Nome:</strong> <span id="perfilNome"></span></p>
+
+            <p class="mt-1"><strong>Tipo:</strong> <span id="perfilTipo"></span></p>
+
+            <div class="mt-3">
+
+              <button onclick="logout()" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded">Sair</button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </header>
+
+
+
+  <div class="max-w-[1400px] mx-auto flex gap-6 px-6 py-6">
+
+    <!-- SIDEBAR -->
+
+    <aside class="flex flex-col p-6 rounded-xl shadow-lg text-white">
+
+      <nav class="flex flex-col gap-2">
+
+        <button onclick="mostrarTela('avisos')" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-white/6">
+
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+
+          <span class="font-medium">Mural de Avisos</span>
+
+        </button>
+
+
+
+        <button onclick="mostrarTela('forum')" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-white/6">
+
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12v5a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+
+          <span class="font-medium">Fórum</span>
+
+        </button>
+
+
+
+        <button onclick="mostrarTela('calendario')" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-white/6">
+
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+
+          <span class="font-medium">Calendário</span>
+
+        </button>
+
+
+
+        <button onclick="mostrarTela('chapas')" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-white/6">
+
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M5 7v10a2 2 0 002 2h10a2 2 0 002-2V7M9 7v10M15 7v10"/></svg>
+
+          <span class="font-medium">Chapas</span>
+
+        </button>
+
+
+
+        <button onclick="mostrarTela('jogos')" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded hover:bg-white/6">
+
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 9.75L5.25 6v12l4.5-3.75M14.25 9.75L18.75 6v12l-4.5-3.75"/></svg>
+
+          <span class="font-medium">Jogos</span>
+
+        </button>
+
+      </nav>
+
+
+
+      <div class="mt-auto">
+
+        <button onclick="logout()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded">Sair</button>
+
+      </div>
+
+    </aside>
+
+
+
+    <!-- MAIN -->
+
+    <main class="flex-1 overflow-hidden">
+
+
+
+      <!-- AVISOS -->
+
+      <section id="avisos" class="hidden h-full flex flex-col">
+
+        <div class="flex items-center justify-between mb-4">
+
+          <h2 class="text-lg font-semibold text-white">Mural de Avisos</h2>
+
+        </div>
+
+
+
+        <div class="flex gap-6 h-full">
+
+          <div class="flex-1 bg-[var(--panel)] rounded-xl p-5 shadow h-[calc(100vh-64px-48px)] overflow-hidden flex flex-col">
+
+            <div id="formAviso" class="mb-4 hidden">
+
+              <div class="flex gap-3">
+
+                <input id="textoAviso" type="text" placeholder="Escreva um aviso..." class="flex-1 border rounded px-3 py-2 focus:outline-none"/>
+
+                <button id="btnAddAviso" class="bg-[var(--accent)] text-white px-4 py-2 rounded">Adicionar</button>
+
+              </div>
+
+            </div>
+
+
+
+            <div id="listaAvisos" class="space-y-3 overflow-y-auto pr-2">
+
+              <!-- avisos -->
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- FORUM -->
+
+      <section id="forum" class="hidden h-full flex flex-col">
+
+        <div class="mb-4">
+
+          <h2 class="text-lg font-semibold text-white">Fórum</h2>
+
+        </div>
+
+
+
+        <div class="bg-[var(--panel)] rounded-xl p-5 shadow h-[calc(100vh-64px-48px)] flex flex-col">
+
+          <div id="listaForum" class="flex-1 overflow-y-auto space-y-4 pb-4">
+
+            <!-- posts -->
+
+          </div>
+
+
+
+          <form id="formForum" class="mt-4 flex gap-3 items-center">
+
+            <input id="textoForum" type="text" placeholder="Escreva algo para o fórum..." class="flex-1 border rounded-l px-4 py-3 focus:outline-none text-slate-900"/>
+
+            <button class="bg-green-600 text-white px-4 py-3 rounded-r" type="submit">Enviar</button>
+
+          </form>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- CALENDÁRIO -->
+
+      <section id="calendario" class="hidden h-full flex flex-col">
+
+        <div class="mb-4 flex items-center justify-between">
+
+          <h2 class="text-lg font-semibold text-white">Calendário</h2>
+
+          <div class="flex items-center gap-3">
+
+            <button onclick="mudarMes(-1)" class="bg-white/6 text-white px-3 py-1 rounded hover:bg-white/10">◀</button>
+
+            <div id="mesAtual" class="text-white font-medium"></div>
+
+            <button onclick="mudarMes(1)" class="bg-white/6 text-white px-3 py-1 rounded hover:bg-white/10">▶</button>
+
+          </div>
+
+        </div>
+
+
+
+        <div class="bg-[var(--panel)] rounded-xl p-5 shadow flex flex-col gap-4 h-[calc(100vh-64px-48px)]">
+
+          <div class="grid grid-cols-7 gap-2 text-sm font-medium text-slate-600">
+
+            <div class="text-center">Dom</div><div class="text-center">Seg</div><div class="text-center">Ter</div><div class="text-center">Qua</div>
+
+            <div class="text-center">Qui</div><div class="text-center">Sex</div><div class="text-center">Sáb</div>
+
+          </div>
+
+
+
+          <div id="calendarioGrid" class="grid grid-cols-7 gap-4 flex-1 overflow-y-auto"></div>
+
+
+
+          <form id="formEvento" class="hidden flex gap-2 items-center">
+
+            <input id="dataEvento" type="date" class="border rounded px-3 py-2"/>
+
+            <input id="descEvento" type="text" placeholder="Descrição do evento" class="flex-1 border rounded px-3 py-2"/>
+
+            <button class="bg-[var(--accent)] text-white px-4 py-2 rounded">Adicionar</button>
+
+          </form>
+
+
+
+          <div>
+
+            <ul id="listaEventos" class="space-y-2 max-h-40 overflow-y-auto"></ul>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- CHAPAS -->
+
+      <section id="chapas" class="hidden h-full flex flex-col">
+
+        <div class="mb-4">
+
+          <h2 class="text-lg font-semibold text-white">Chapas e Propostas</h2>
+
+        </div>
+
+
+
+        <div class="bg-[var(--panel)] rounded-xl p-5 shadow h-[calc(100vh-64px-48px)] overflow-auto">
+
+          <form id="formChapa" class="hidden flex flex-col gap-3 mb-4">
+
+            <input id="nomeChapa" type="text" placeholder="Nome da chapa" class="border rounded px-3 py-2"/>
+
+            <textarea id="propostaChapa" placeholder="Proposta da chapa" class="border rounded px-3 py-2 h-28 resize-none"></textarea>
+
+            <input id="integrantesChapa" type="text" placeholder="Integrantes (separados por vírgula)" class="border rounded px-3 py-2"/>
+
+            <input id="imagemChapa" type="file" accept="image/*"/>
+
+            <div>
+
+              <button class="bg-[var(--accent)] text-white px-4 py-2 rounded">Adicionar Chapa</button>
+
+            </div>
+
+          </form>
+
+
+
+          <ul id="listaChapas" class="space-y-3"></ul>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- JOGOS -->
+
+      <section id="jogos" class="hidden h-full flex flex-col">
+
+        <div class="mb-4">
+
+          <h2 class="text-lg font-semibold text-white">Jogos</h2>
+
+        </div>
+
+
+
+        <div class="bg-[var(--panel)] rounded-xl p-5 shadow h-[calc(100vh-64px-48px)] flex flex-col gap-4">
+
+          <div class="flex gap-3">
+
+            <button onclick="abrirJogo('jogo/jogo-da-memoria.html')" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800">Jogo da Memória</button>
+
+            <button onclick="abrirJogo('jogo/jogo-do-simon.html')" class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">Jogo do Simon</button>
+
+          </div>
+
+
+
+          <div id="gameContainer" class="flex-1 border rounded overflow-hidden bg-white">
+
+            <div class="w-full h-full flex items-center justify-center text-slate-500">Escolha um jogo para iniciar.</div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+    </main>
+
+  </div>
+
+
+
+  <!-- Modal evento -->
+
+  <div id="modalEvento" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+
+    <div class="bg-white rounded-lg p-6 max-w-md mx-auto shadow-lg">
+
+      <h3 class="font-semibold mb-2">Detalhes do Evento</h3>
+
+      <p id="detalhesEvento" class="text-sm text-slate-600 mb-4"></p>
+
+      <div class="text-right">
+
+        <button class="px-4 py-2 rounded bg-slate-200" onclick="fecharModal()">Fechar</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <script>
+
+    /* ---------- permissões (role salvo em login.html) ---------- */
+
+    let role = localStorage.getItem('role');
+
+    if(!role) location.href = 'login.html';
+
+
+
+    // --- implementação do menu suspenso de perfil (dados vêm do localStorage) ---
+
+    const nomeUsuario = localStorage.getItem('nomeUsuario') || 'Usuário';
+
+    const fotoSalva = localStorage.getItem('fotoPerfil');
+
+    // preencher cabeçalho e dropdown
+
+    const perfilNomeHeaderEl = document.getElementById('perfilNomeHeader');
+
+    const perfilFotoEl = document.getElementById('perfilFoto');
+
+    const perfilNomeEl = document.getElementById('perfilNome');
+
+    const perfilTipoEl = document.getElementById('perfilTipo');
+
+    if(perfilNomeHeaderEl) perfilNomeHeaderEl.textContent = nomeUsuario;
+
+    if(perfilFotoEl && fotoSalva) perfilFotoEl.src = fotoSalva;
+
+    if(perfilNomeEl) perfilNomeEl.textContent = nomeUsuario;
+
+    if(perfilTipoEl) perfilTipoEl.textContent = role ? (role.charAt(0).toUpperCase() + role.slice(1)) : '';
+
+
+
+    // toggle do dropdown
+
+    const perfilToggleBtn = document.getElementById('perfilToggle');
+
+    const perfilDropdown = document.getElementById('perfilDropdown');
+
+    const perfilWrapper = document.getElementById('perfilWrapper');
+
+    if(perfilToggleBtn){
+
+      perfilToggleBtn.addEventListener('click', function(e){
+
+        e.stopPropagation();
+
+        if(perfilDropdown) perfilDropdown.classList.toggle('hidden');
+
+      });
+
+    }
+
+    // fechar ao clicar fora
+
+    window.addEventListener('click', function(e){
+
+      if(!e.target.closest('#perfilWrapper')){
+
+        if(perfilDropdown) perfilDropdown.classList.add('hidden');
+
+      }
+
     });
-    document.getElementById("formChapa").style.display=(role==="gestor")?"flex":"none";
-  }
-  document.getElementById("formChapa")?.addEventListener("submit",e=>{
-    e.preventDefault(); if(role!=="gestor") return;
-    const nome=document.getElementById("nomeChapa").value.trim();
-    const proposta=document.getElementById("propostaChapa").value.trim();
-    const integrantes=document.getElementById("integrantesChapa").value.trim();
-    const img=document.getElementById("imagemChapa").files[0];
-    if(!nome||!proposta) return;
-    if(img){ const reader=new FileReader(); reader.onload=(ev)=>{ const chapas=loadChapas(); chapas.push({nome,proposta,integrantes,imagem:ev.target.result}); saveChapas(chapas); renderChapas(); }; reader.readAsDataURL(img); } else { const chapas=loadChapas(); chapas.push({nome,proposta,integrantes}); saveChapas(chapas); renderChapas(); }
-    document.getElementById("nomeChapa").value=""; document.getElementById("propostaChapa").value=""; document.getElementById("integrantesChapa").value=""; document.getElementById("imagemChapa").value="";
-  });
- 
-  // ---------- Inicial ----------
-  mostrarTela("avisos");
-</script>
- 
+
+
+
+    /* storage helpers */
+
+    const storage = {
+
+      avisos: ()=> JSON.parse(localStorage.getItem('avisos')||'[]'),
+
+      saveAvisos: arr => localStorage.setItem('avisos', JSON.stringify(arr)),
+
+      forum: ()=> JSON.parse(localStorage.getItem('forum')||'[]'),
+
+      saveForum: arr => localStorage.setItem('forum', JSON.stringify(arr)),
+
+      eventos: ()=> JSON.parse(localStorage.getItem('eventos')||'[]'),
+
+      saveEventos: arr => localStorage.setItem('eventos', JSON.stringify(arr)),
+
+      chapas: ()=> JSON.parse(localStorage.getItem('chapas')||'[]'),
+
+      saveChapas: arr => localStorage.setItem('chapas', JSON.stringify(arr)),
+
+    };
+
+
+
+    /* navigation */
+
+    function mostrarTela(tela){
+
+      document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+
+      document.getElementById(tela).classList.remove('hidden');
+
+
+
+      if(tela==='avisos') renderAvisos();
+
+      if(tela==='forum') renderForum();
+
+      if(tela==='calendario') renderCalendario();
+
+      if(tela==='chapas') renderChapas();
+
+      if(tela==='jogos') renderJogoContainer();
+
+    }
+
+
+
+    function logout(){ localStorage.removeItem('role'); location.href='login.html'; }
+
+
+
+    /* ---------- AVISOS ---------- */
+
+    function renderAvisos(){
+
+      const container = document.getElementById('listaAvisos'); container.innerHTML='';
+
+      const avisos = storage.avisos();
+
+      if(avisos.length===0){
+
+        container.innerHTML = '<div class="text-slate-500">Nenhum aviso ainda.</div>';
+
+      }
+
+      avisos.forEach((a, idx)=>{
+
+        const item = document.createElement('div');
+
+        item.className = 'p-3 rounded border';
+
+        item.innerHTML = `<div class="text-slate-800 font-medium">${a.texto}</div><div class="text-sm text-slate-500 mt-1">Publicado</div>`;
+
+        if(role==='gestor'){
+
+          const wrap = document.createElement('div'); wrap.className='mt-2 flex gap-2';
+
+          const btnEdit = document.createElement('button'); btnEdit.className='px-3 py-1 bg-yellow-400 rounded text-slate-800 text-sm'; btnEdit.textContent='Editar';
+
+          btnEdit.onclick = ()=>{ const novo = prompt('Editar aviso:', a.texto); if(novo!==null){ avisos[idx].texto = novo.trim(); storage.saveAvisos(avisos); renderAvisos(); } };
+
+          const btnDel = document.createElement('button'); btnDel.className='px-3 py-1 bg-red-500 rounded text-white text-sm'; btnDel.textContent='Apagar';
+
+          btnDel.onclick = ()=>{ if(!confirm('Confirma exclusão do aviso?')) return; avisos.splice(idx,1); storage.saveAvisos(avisos); renderAvisos(); };
+
+          wrap.appendChild(btnEdit); wrap.appendChild(btnDel); item.appendChild(wrap);
+
+        }
+
+        container.appendChild(item);
+
+      });
+
+
+
+      document.getElementById('formAviso').style.display = (role==='gestor') ? 'block' : 'none';
+
+    }
+
+    document.getElementById('btnAddAviso')?.addEventListener('click', ()=>{
+
+      if(role!=='gestor') return;
+
+      const texto = document.getElementById('textoAviso').value.trim();
+
+      if(!texto) return alert('Escreva algo para adicionar.');
+
+      const avisos = storage.avisos(); avisos.unshift({texto}); storage.saveAvisos(avisos);
+
+      document.getElementById('textoAviso').value=''; renderAvisos();
+
+    });
+
+
+
+    /* ---------- FÓRUM ---------- */
+
+    function renderForum(){
+
+      const lista = document.getElementById('listaForum'); lista.innerHTML='';
+
+      const posts = storage.forum();
+
+      if(posts.length===0) lista.innerHTML = '<div class="text-slate-500">Nenhuma mensagem ainda.</div>';
+
+      posts.forEach((p, idx)=>{
+
+        const card = document.createElement('div');
+
+        card.className = 'bg-white rounded p-4 shadow flex justify-between items-start gap-4';
+
+        const left = document.createElement('div'); left.innerHTML = `<div class="text-slate-800 font-medium">${p.texto}</div><div class="text-xs text-slate-500 mt-2">Publicado</div>`;
+
+        card.appendChild(left);
+
+        if(role==='gestor'){
+
+          const actions = document.createElement('div'); actions.className='flex gap-2';
+
+          const btnDel = document.createElement('button'); btnDel.className='px-2 py-1 bg-red-500 text-white rounded text-sm'; btnDel.textContent='Apagar';
+
+          btnDel.onclick = ()=>{ if(!confirm('Remover esta mensagem?')) return; posts.splice(idx,1); storage.saveForum(posts); renderForum(); };
+
+          actions.appendChild(btnDel); card.appendChild(actions);
+
+        }
+
+        lista.appendChild(card);
+
+      });
+
+    }
+
+    document.getElementById('formForum')?.addEventListener('submit', e=>{
+
+      e.preventDefault();
+
+      const texto = document.getElementById('textoForum').value.trim();
+
+      if(!texto) return;
+
+      const posts = storage.forum(); posts.push({texto}); storage.saveForum(posts);
+
+      document.getElementById('textoForum').value=''; renderForum();
+
+      // scroll to bottom
+
+      setTimeout(()=>{ const box = document.getElementById('listaForum'); box.scrollTop = box.scrollHeight; }, 80);
+
+    });
+
+
+
+    /* ---------- CALENDÁRIO ---------- */
+
+    let hoje = new Date(), mes = hoje.getMonth(), ano = hoje.getFullYear();
+
+
+
+    function renderCalendario(){
+
+      const grid = document.getElementById('calendarioGrid'); grid.innerHTML='';
+
+      const listaEventos = document.getElementById('listaEventos'); listaEventos.innerHTML='';
+
+      const base = new Date(ano, mes, 1);
+
+      document.getElementById('mesAtual').textContent = base.toLocaleString('pt-BR', {month:'long', year:'numeric'});
+
+
+
+      const eventos = storage.eventos().filter(ev => { const d = new Date(ev.data+'T00:00:00'); return d.getMonth()===mes && d.getFullYear()===ano; });
+
+
+
+      const startDay = base.getDay();
+
+      for(let i=0;i<startDay;i++){ const empty = document.createElement('div'); grid.appendChild(empty); }
+
+
+
+      const daysInMonth = new Date(ano, mes+1, 0).getDate();
+
+      for(let d=1; d<=daysInMonth; d++){
+
+        const box = document.createElement('div');
+
+        const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+        const evs = eventos.filter(e=>e.data===dataStr);
+
+        const num = document.createElement('div'); num.className='dia-num'; num.textContent = d;
+
+        box.appendChild(num);
+
+
+
+        if(d===hoje.getDate() && mes===hoje.getMonth() && ano===hoje.getFullYear()){
+
+          box.classList.add('hoje');
+
+        }
+
+
+
+        if(evs.length){
+
+          box.classList.add('tooltip');
+
+          const tip = document.createElement('div'); tip.className='tooltiptext';
+
+          tip.innerHTML = evs.map(e => `<div class="font-medium">${e.desc}</div>`).join('');
+
+          box.appendChild(tip);
+
+          const badge = document.createElement('div'); badge.className='dia-evento-badge mt-2'; badge.textContent = `${evs.length} evento${evs.length>1?'s':''}`;
+
+          box.appendChild(badge);
+
+        } else {
+
+          box.classList.add('bg-slate-50/80');
+
+        }
+
+
+
+        box.onclick = ()=>{ if(evs.length) abrirModal(dataStr); };
+
+        grid.appendChild(box);
+
+      }
+
+
+
+      // list events
+
+      eventos.forEach((ev, idx)=>{
+
+        const li = document.createElement('li');
+
+        li.className = 'p-2 rounded border flex justify-between items-center';
+
+        li.innerHTML = `<div><div class="font-medium">${ev.desc}</div><div class="text-sm text-slate-500">${new Date(ev.data+'T00:00:00').toLocaleDateString('pt-BR')}</div></div>`;
+
+        if(role==='gestor'){
+
+          const btn = document.createElement('button'); btn.className='px-2 py-1 bg-red-500 text-white rounded text-sm'; btn.textContent='Apagar';
+
+          btn.onclick = ()=>{ if(!confirm('Excluir evento?')) return; const remaining = storage.eventos().filter(e => e !== ev); storage.saveEventos(remaining); renderCalendario(); };
+
+          li.appendChild(btn);
+
+        }
+
+        listaEventos.appendChild(li);
+
+      });
+
+
+
+      document.getElementById('formEvento').style.display = (role==='gestor') ? 'flex' : 'none';
+
+    }
+
+
+
+    document.getElementById('formEvento')?.addEventListener('submit', e=>{
+
+      e.preventDefault(); if(role!=='gestor') return;
+
+      const data = document.getElementById('dataEvento').value;
+
+      const desc = document.getElementById('descEvento').value.trim();
+
+      if(!data || !desc) return alert('Preencha data e descrição.');
+
+      const evs = storage.eventos(); evs.push({data, desc}); storage.saveEventos(evs);
+
+      document.getElementById('dataEvento').value=''; document.getElementById('descEvento').value='';
+
+      renderCalendario();
+
+    });
+
+
+
+    function mudarMes(delta){ mes += delta; if(mes<0){ mes=11; ano--; } if(mes>11){ mes=0; ano++; } renderCalendario(); }
+
+
+
+    function abrirModal(dataStr){
+
+      const ev = storage.eventos().find(e=>e.data===dataStr);
+
+      if(!ev) return;
+
+      document.getElementById('detalhesEvento').textContent = `${new Date(ev.data+'T00:00:00').toLocaleDateString('pt-BR')}: ${ev.desc}`;
+
+      const modal = document.getElementById('modalEvento'); modal.classList.remove('hidden'); modal.classList.add('flex');
+
+    }
+
+    function fecharModal(){ const modal=document.getElementById('modalEvento'); modal.classList.add('hidden'); }
+
+
+
+    /* ---------- CHAPAS ---------- */
+
+    function renderChapas(){
+
+      const list = document.getElementById('listaChapas'); list.innerHTML='';
+
+      const chapas = storage.chapas();
+
+      if(chapas.length===0) list.innerHTML = '<div class="text-slate-500">Nenhuma chapa cadastrada.</div>';
+
+      chapas.forEach((c, idx)=>{
+
+        const li = document.createElement('li'); li.className='p-3 rounded border bg-white';
+
+        li.innerHTML = `<div class="font-medium text-lg">${c.nome}</div><div class="text-sm text-slate-600 mt-1">${c.proposta}</div><div class="text-sm italic mt-2 text-slate-500">Integrantes: ${c.integrantes || '-'}</div>`;
+
+        if(c.imagem){ const img = document.createElement('img'); img.src=c.imagem; img.className='mt-3 max-h-36 rounded'; li.appendChild(img); }
+
+        if(role==='gestor'){
+
+          const wrap = document.createElement('div'); wrap.className='flex gap-2 mt-3';
+
+          const btnEdit = document.createElement('button'); btnEdit.className='px-3 py-1 bg-yellow-400 rounded text-slate-800'; btnEdit.textContent='Editar';
+
+          btnEdit.onclick = ()=>{ const novo = prompt('Editar proposta:', c.proposta); if(novo!==null){ const all = storage.chapas(); all[idx].proposta = novo.trim(); storage.saveChapas(all); renderChapas(); } };
+
+          const btnDel = document.createElement('button'); btnDel.className='px-3 py-1 bg-red-500 rounded text-white'; btnDel.textContent='Apagar';
+
+          btnDel.onclick = ()=>{ if(!confirm('Excluir esta chapa?')) return; const all = storage.chapas().filter((_,i)=>i!==idx); storage.saveChapas(all); renderChapas(); };
+
+          wrap.appendChild(btnEdit); wrap.appendChild(btnDel); li.appendChild(wrap);
+
+        }
+
+        list.appendChild(li);
+
+      });
+
+
+
+      document.getElementById('formChapa').style.display = (role==='gestor') ? 'flex' : 'none';
+
+    }
+
+
+
+    document.getElementById('formChapa')?.addEventListener('submit', e=>{
+
+      e.preventDefault(); if(role!=='gestor') return;
+
+      const nome = document.getElementById('nomeChapa').value.trim();
+
+      const proposta = document.getElementById('propostaChapa').value.trim();
+
+      const integrantes = document.getElementById('integrantesChapa').value.trim();
+
+      const file = document.getElementById('imagemChapa').files[0];
+
+      if(!nome || !proposta) return alert('Nome e proposta obrigatórios.');
+
+      if(file){
+
+        const reader = new FileReader();
+
+        reader.onload = ev => {
+
+          const all = storage.chapas(); all.push({nome, proposta, integrantes, imagem: ev.target.result}); storage.saveChapas(all); document.getElementById('formChapa').reset(); renderChapas();
+
+        };
+
+        reader.readAsDataURL(file);
+
+      } else {
+
+        const all = storage.chapas(); all.push({nome, proposta, integrantes}); storage.saveChapas(all); document.getElementById('formChapa').reset(); renderChapas();
+
+      }
+
+    });
+
+
+
+    /* ---------- JOGOS ---------- */
+
+    function abrirJogo(url){
+
+      const cont = document.getElementById('gameContainer'); cont.innerHTML = `<iframe src="${url}" class="w-full h-full border-0"></iframe>`;
+
+    }
+
+    function renderJogoContainer(){ document.getElementById('gameContainer').innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-500">Escolha um jogo para iniciar.</div>`; }
+
+
+
+    /* ---------- inicial ---------- */
+
+    mostrarTela('avisos');
+
+  </script>
+
 </body>
+
 </html>
- 
- 

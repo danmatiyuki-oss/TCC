@@ -810,9 +810,9 @@
 
         const li = document.createElement('li');
 
-        li.className = 'p-2 rounded border flex justify-between items-center text-black';
+        <li.className = 'p-2 rounded border flex justify-between items-center text-black'>
 
-        li.innerHTML = `<div><div class="font-medium">${ev.desc}</div><div class="text-sm text-slate-500">${new Date(ev.data+'T00:00:00').toLocaleDateString('pt-BR')}</div></div>`;
+        li.innerHTML = `<div><div class="font-medium text-black">${ev.desc}</div><div class="text-sm text-slate-500">${new Date(ev.data+'T00:00:00').toLocaleDateString('pt-BR')}</div></div>`;
 
         if(role==='gestor'){
 
